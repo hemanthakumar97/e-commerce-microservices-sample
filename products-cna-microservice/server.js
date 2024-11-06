@@ -1,27 +1,30 @@
 // Loads the configuration from config.env to process.env
 require('dotenv').config({ path: './.env' });
-const deals = require('./data/deals')
-const products = require('./data/products')
+const deals = require('./data/deals');
+const products = require('./data/products');
 
 const express = require('express');
-const cors = require('cors');
+// const cors = require('cors');
 // get MongoDB driver connection
 const dbo = require('./db/conn');
 
 const PORT = process.env.PORT || 5000;
 const app = express();
 
-app.use(cors());
+// Uncomment and configure CORS if needed
+// app.use(cors({
+//   origin: '*'  // Or allow all origins: '*'
+// }));
 app.use(express.json());
 app.use(require('./routes/record'));
 
 // Global error handling
-app.use(function (err, _req, res) {
+app.use(function (err, req, res, next) {
   console.error(err.stack);
   res.status(500).send('Something broke!');
 });
 
-loadData = () => {
+const loadData = () => {
   const dbConnect = dbo.getDb();
 
   ['deals', 'products'].map((collection) => {
@@ -34,21 +37,22 @@ loadData = () => {
         if (err) throw err;
         console.log("Collection is deleted! ", result);
       });
-    })
-  });
-  [{collection: 'deals', records: deals.deals}, { collection: 'products', records: products.products}].map((data) => {
-    dbConnect
-    .collection(data.collection)
-    .insertMany(data.records, (err, result) => {
-      if (err) {
-        console.log('Error loading data')
-        throw err
-      } else {
-        console.log('Data loaded ', result)
-      }
     });
   });
-}
+
+  [{ collection: 'deals', records: deals.deals }, { collection: 'products', records: products.products }].map((data) => {
+    dbConnect
+      .collection(data.collection)
+      .insertMany(data.records, (err, result) => {
+        if (err) {
+          console.log('Error loading data');
+          throw err;
+        } else {
+          console.log('Data loaded ', result);
+        }
+      });
+  });
+};
 
 // perform a database connection when the server starts
 dbo.connectToServer(function (err) {
@@ -60,6 +64,6 @@ dbo.connectToServer(function (err) {
   // start the Express server
   app.listen(PORT, () => {
     console.log(`Server is running on port: ${PORT}`);
-    loadData()
+    loadData();
   });
 });

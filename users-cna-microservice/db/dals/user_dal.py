@@ -1,19 +1,18 @@
 from typing import List, Optional
-
 from sqlalchemy import update
 from sqlalchemy.future import select
 from sqlalchemy.orm import Session
-
 from db.models.user import User
 
-class UserDAL():
+class UserDAL:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-    async def create_user(self, name: str, email: str,   mobile: str):
-        new_user = User(name=name,email=email, mobile=mobile)
+    async def create_user(self, name: str, email: str, mobile: str) -> User:
+        new_user = User(name=name, email=email, mobile=mobile)
         self.db_session.add(new_user)
         await self.db_session.flush()
+        return new_user  # Return the SQLAlchemy model
 
     async def get_all_users(self) -> List[User]:
         q = await self.db_session.execute(select(User).order_by(User.id))
@@ -32,4 +31,4 @@ class UserDAL():
         if mobile:
             q = q.values(mobile=mobile)
         q.execution_options(synchronize_session="fetch")
-        await  self.db_session.execute(q)
+        await self.db_session.execute(q)
